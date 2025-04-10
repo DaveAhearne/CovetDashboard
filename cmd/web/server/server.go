@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"covet.digital/dashboard/internal/config"
+	"covet.digital/dashboard/internal/datasources/drivers"
+	"covet.digital/dashboard/internal/http/routes"
 	"errors"
 	"fmt"
 	"log"
@@ -23,6 +25,21 @@ func NewApp() (*App, error) {
 
 	// set up the routes and middleware
 	mux := http.NewServeMux()
+
+	// Database connection
+	connectionString := drivers.GetDbConnString(
+		conf.DatabaseUsername,
+		conf.DatabasePassword,
+		conf.DatabaseHost,
+		conf.DatabasePort,
+		conf.DatabaseName)
+
+	connPool, err := drivers.SetupPostgresConnection(connectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	routes.AddWSRoute(mux, connPool, conf).Setup()
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf("%s:%s", conf.ApplicationHost, conf.ApplicationPort),
@@ -67,72 +84,3 @@ func (a *App) Run() error {
 
 	return nil
 }
-
-//var upgrader = websocket.Upgrader{
-//	ReadBufferSize:  1024,
-//	WriteBufferSize: 1024,
-//}
-//
-//var connPool *pgx.Conn
-//
-//func initDB() {
-//	var err error
-//	connPool, err = pgx.Connect(context.Background(), "postgres://db_usr:mysecretpassword@0.0.0.0:5432/app")
-//	if err != nil {
-//		log.Fatalf("Unable to connect to database: %v\n", err)
-//	}
-//	log.Println("Connected to the database successfully!")
-//}
-//
-//func wsHandler(w http.ResponseWriter, r *http.Request) {
-//	upgrader.CheckOrigin = func(r *http.Request) bool {
-//		return true
-//	}
-//
-//	conn, err := upgrader.Upgrade(w, r, nil)
-//	if err != nil {
-//		log.Println("Upgrade error:", err)
-//		return
-//	}
-//	defer conn.Close()
-//
-//	go func() {
-//		for {
-//			messageType, p, err := conn.ReadMessage()
-//			if err != nil {
-//				log.Println("ReadMessage error:", err)
-//				return
-//			}
-//			if err := conn.WriteMessage(messageType, p); err != nil {
-//				log.Println("WriteMessage error:", err)
-//				return
-//			}
-//		}
-//	}()
-//
-//	log.Println("Listening for database notifications...")
-//	if _, err := connPool.Exec(context.Background(), "LISTEN log_event"); err != nil {
-//		log.Fatalf("Failed to listen for notifications: %v", err)
-//	}
-//
-//	for {
-//		notification, err := connPool.WaitForNotification(context.Background())
-//		if err != nil {
-//			log.Println("WaitForNotification error:", err)
-//			continue
-//		}
-//		log.Printf("Received notification: %v", notification.Payload)
-//		if err := conn.WriteMessage(websocket.TextMessage, []byte(notification.Payload)); err != nil {
-//			log.Println("WriteMessage error:", err)
-//			return
-//		}
-//	}
-//}
-//
-//func main() {
-//	initDB()
-//	defer connPool.Close(context.Background())
-//
-//	http.HandleFunc("/ws", wsHandler)
-//	log.Fatal(http.ListenAndServe(":1234", nil))
-//}

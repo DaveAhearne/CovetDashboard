@@ -21,7 +21,7 @@ func NewConfig() Config {
 	var port string
 	var address string
 
-	flag.StringVar(&port, "port", "8080", "the port to run on")
+	flag.StringVar(&port, "port", "1234", "the port to run on")
 	flag.StringVar(&address, "address", "localhost", "the address to run on")
 	flag.Parse()
 
