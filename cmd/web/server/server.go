@@ -36,15 +36,15 @@ func NewApp() (*App, error) {
 		conf.DatabasePort,
 		conf.DatabaseName)
 
-	connPool, err := drivers.SetupPostgresConnection(connectionString)
+	dbConn, err := drivers.SetupPostgresConnection(connectionString)
 	if err != nil {
-		return nil, err
+		log.Fatalln(err)
 	}
 
 	templateService := template.NewTemplateService(content.TemplateFs, "**/**/*.html")
 
 	routes.AddHomeRoute(mux, templateService).Setup()
-	routes.AddWSRoute(mux, connPool, conf).Setup()
+	routes.AddWSRoute(mux, dbConn, conf).Setup()
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf("%s:%s", conf.ApplicationHost, conf.ApplicationPort),

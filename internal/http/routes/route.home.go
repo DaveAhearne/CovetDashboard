@@ -26,4 +26,5 @@ func AddHomeRoute(mux *http.ServeMux, templateService template.TemplateService) 
 
 func (r *homeRoutes) Setup() {
 	r.mux.Handle("GET /{$}", r.middleware(r.handler.Home))
+	r.mux.Handle("GET /", r.middleware(r.handler.RedirectHome))
 }

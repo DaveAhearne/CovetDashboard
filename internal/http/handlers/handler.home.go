@@ -22,6 +22,8 @@ func NewHomeHandler(usecase domains.HomeUsecase, templateService template.Templa
 }
 
 func (homeH HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
+	println("User got the home page")
+	
 	req := requests.HomepageRequest{}
 
 	status, res := homeH.usecase.Home(r.Context(), *req.ToDomain())
@@ -30,4 +32,8 @@ func (homeH HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(status)
 
 	homeH.templateService.Execute(w, "views/index", homepageResponse)
+}
+
+func (homeH HomeHandler) RedirectHome(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }

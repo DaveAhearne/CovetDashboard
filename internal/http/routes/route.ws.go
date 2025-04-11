@@ -3,10 +3,10 @@ package routes
 import (
 	"covet.digital/dashboard/internal/business/usecases"
 	"covet.digital/dashboard/internal/config"
-	"covet.digital/dashboard/internal/datasources/drivers"
 	"covet.digital/dashboard/internal/datasources/repositories"
 	"covet.digital/dashboard/internal/http/handlers"
 	"covet.digital/dashboard/pkg/ws"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 )
 
@@ -19,7 +19,7 @@ type WsRoutes struct {
 type wsRoutesMiddlewares struct {
 }
 
-func AddWSRoute(mux *http.ServeMux, db drivers.PgxIface, conf config.Config) *WsRoutes {
+func AddWSRoute(mux *http.ServeMux, db *pgx.Conn, conf config.Config) *WsRoutes {
 	logRepository := repositories.NewLogRepository(db)
 	websocketService := ws.NewWSService()
 

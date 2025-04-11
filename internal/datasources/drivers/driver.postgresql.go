@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5"
-	"log"
-
-	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"os"
 )
 
 type PgxIface interface {
@@ -24,17 +21,31 @@ func GetDbConnString(dbusername string, dbpassword string, dbhost string, dbport
 		dbname)
 }
 
-func SetupPostgresConnection(connectionString string) (*pgxpool.Pool, error) {
-	conf, err := pgxpool.ParseConfig(connectionString)
+func SetupPostgresConnection(connectionString string) (*pgx.Conn, error) {
+	conf, err := pgx.ParseConfig(connectionString)
 
+	println(conf.ConnString())
+
+	//if err != nil {
+	//	log.Fatalf("Invalid database connection string: %s\n", err)
+	//}
+
+	//conf.AfterConnect = func(ctx context.Context, conn *pgconn.PgConn) error {
+	//	pgxuuid.Register(conn.TypeMap())
+	//	return nil
+	//}
+
+	println("before connect")
+
+	conn, err := pgx.Connect(context.Background(), connectionString)
 	if err != nil {
-		log.Fatalf("Invalid database connection string: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
 	}
 
-	conf.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-		pgxuuid.Register(conn.TypeMap())
-		return nil
-	}
+	println("afer connect")
 
-	return pgxpool.NewWithConfig(context.Background(), conf)
+	return conn, err
+
+	//return pgxpool.NewWithConfig(context.Background(), conf)
 }

@@ -5,23 +5,111 @@
 <head>
     <meta charset="UTF-8">
     <title>WebSocket Client</title>
+    <script src="https://d3js.org/d3.v4.js"></script>
 </head>
 
 <body>
-    <h1>WebSocket Client</h1>
+    <h1>Token Challenges Sent/Used</h1>
+    <div id="container"></div>
+    <div style="color: red" id="errors"></div>
     <div id="messages"></div>
     <script>
-        var ws = new WebSocket("ws://localhost:1234/ws");
+        // ### START CHART ###
+
+        // set the dimensions and margins of the graph
+        var width = 450
+        height = 450
+        margin = 40
+
+        // The radius of the pieplot is half the width or half the height (smallest one). I subtract a bit of margin.
+        var radius = Math.min(width, height) / 2 - margin
+
+        // append the svg object to the div called 'my_dataviz'
+        var svg = d3.select("#container")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        // create 2 data_set
+        var log_data = {requested: 1, used: 1}
+
+        // set the color scale
+        var color = d3.scaleOrdinal()
+            .domain(["requested", "used"])
+            .range(["#7a9fd1", "#6ad65a"])
+
+        // A function that create / update the plot for a given variable:
+        function update(data) {
+
+            // Compute the position of each group on the pie:
+            var pie = d3.pie()
+                .value(function(d) {return d.value; })
+                .sort(function(a, b) { console.log(a) ; return d3.ascending(a.key, b.key);} ) // This make sure that group order remains the same in the pie chart
+            var data_ready = pie(d3.entries(data))
+
+            // map to data
+            var u = svg.selectAll("path")
+                .data(data_ready)
+
+            // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
+            u
+                .enter()
+                .append('path')
+                .merge(u)
+                .transition()
+                .duration(1000)
+                .attr('d', d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(radius)
+                )
+                .attr('fill', function(d){ return(color(d.data.key)) })
+                .attr("stroke", "white")
+                .style("stroke-width", "2px")
+                .style("opacity", 1)
+
+            // remove the group that is not present anymore
+            u
+                .exit()
+                .remove()
+
+        }
+
+        // Initialize the plot with the first dataset
+        update(log_data)
+        //
+        // setInterval(()=> {
+        //     log_data.requested += 1;
+        //     update(log_data)
+        // },1000)
+
+        // ### END CHART ###
+
+        var ws = new WebSocket("ws://192.168.0.76:1234/ws");
 
         ws.onopen = function (event) {
+            var errors = document.getElementById('errors');
             console.log("WebSocket is open now.");
         };
 
         ws.onmessage = function (event) {
-            var messages = document.getElementById('messages');
-            var message = document.createElement('div');
-            message.textContent = event.data;
-            messages.appendChild(message);
+
+            let event_data = JSON.parse(event.data)
+
+            if (event_data.Category == "CreateAuthenticationChallenge"){
+                console.log("Got an auth challenge message")
+
+                log_data.requested += 1
+                update(log_data)
+            }
+
+            // console.log(event)
+
+            // var messages = document.getElementById('messages');
+            // var message = document.createElement('div');
+            // message.textContent = event.data;
+            // messages.appendChild(message);
         };
 
         ws.onclose = function (event) {
@@ -29,6 +117,8 @@
         };
 
         ws.onerror = function (error) {
+            var errors = document.getElementById('errors');
+            errors.appendChild(error);
             console.log("WebSocket error:", error);
         };
     </script>
