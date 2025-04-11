@@ -18,8 +18,10 @@ type LogDomain struct {
 type LogUseCase interface {
 	UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error)
 	ListenForLogEvents(ctx context.Context) (<-chan LogDomain, error)
+	GetLastWeeksEvents(ctx context.Context) ([]LogDomain, error)
 }
 
 type LogRepository interface {
 	Listen(ctx context.Context) (<-chan LogDomain, error)
+	GetEventsAfter(ctx context.Context, date time.Time) ([]LogDomain, error)
 }

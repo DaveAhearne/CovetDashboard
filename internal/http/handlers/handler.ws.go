@@ -19,10 +19,22 @@ func NewWSHandler(logUseCase domains.LogUseCase) WSHandler {
 }
 
 func (wsH WSHandler) HandleStreamLogEvents(w http.ResponseWriter, r *http.Request) {
-	conn, err := wsH.LogUseCase.UpgradeConnection(w, r)
+	ws, err := wsH.LogUseCase.UpgradeConnection(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	logs, err := wsH.LogUseCase.GetLastWeeksEvents(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, log := range logs {
+		if err := ws.WriteJSON(log); err != nil {
+			fmt.Println("An error occurred writing the log back to the socket", err)
+		}
 	}
 
 	defer func(conn *websocket.Conn) {
@@ -30,18 +42,18 @@ func (wsH WSHandler) HandleStreamLogEvents(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 			log.Println(err)
 		}
-	}(conn)
+	}(ws)
 
-	logstream, err := wsH.LogUseCase.ListenForLogEvents(r.Context())
+	logStream, err := wsH.LogUseCase.ListenForLogEvents(r.Context())
 	if err != nil {
-		_ = conn.Close()
+		_ = ws.Close()
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	for {
-		eventLog, _ := <-logstream
-		if err := conn.WriteJSON(eventLog); err != nil {
+		eventLog, _ := <-logStream
+		if err := ws.WriteJSON(eventLog); err != nil {
 			fmt.Println("An error occurred writing the log back to the socket", err)
 		}
 	}

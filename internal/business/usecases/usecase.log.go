@@ -6,6 +6,7 @@ import (
 	"covet.digital/dashboard/pkg/ws"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"time"
 )
 
 type logUsecase struct {
@@ -26,4 +27,8 @@ func (l logUsecase) UpgradeConnection(w http.ResponseWriter, r *http.Request) (*
 
 func (l logUsecase) ListenForLogEvents(ctx context.Context) (<-chan domains.LogDomain, error) {
 	return l.LogRepository.Listen(ctx)
+}
+
+func (l logUsecase) GetLastWeeksEvents(ctx context.Context) ([]domains.LogDomain, error) {
+	return l.LogRepository.GetEventsAfter(ctx, time.Now().AddDate(0, 0, -7))
 }

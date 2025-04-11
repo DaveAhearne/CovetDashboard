@@ -3,11 +3,14 @@ package drivers
 import (
 	"context"
 	"fmt"
+	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
 	"github.com/jackc/pgx/v5"
-	"os"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 )
 
 type PgxIface interface {
+	Acquire(context.Context) (*pgxpool.Conn, error)
 	Begin(context.Context) (pgx.Tx, error)
 	Close()
 }
@@ -21,31 +24,17 @@ func GetDbConnString(dbusername string, dbpassword string, dbhost string, dbport
 		dbname)
 }
 
-func SetupPostgresConnection(connectionString string) (*pgx.Conn, error) {
-	conf, err := pgx.ParseConfig(connectionString)
+func SetupPostgresConnection(connectionString string) (*pgxpool.Pool, error) {
+	conf, err := pgxpool.ParseConfig(connectionString)
 
-	println(conf.ConnString())
-
-	//if err != nil {
-	//	log.Fatalf("Invalid database connection string: %s\n", err)
-	//}
-
-	//conf.AfterConnect = func(ctx context.Context, conn *pgconn.PgConn) error {
-	//	pgxuuid.Register(conn.TypeMap())
-	//	return nil
-	//}
-
-	println("before connect")
-
-	conn, err := pgx.Connect(context.Background(), connectionString)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Invalid database connection string: %s\n", err)
 	}
 
-	println("afer connect")
+	conf.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxuuid.Register(conn.TypeMap())
+		return nil
+	}
 
-	return conn, err
-
-	//return pgxpool.NewWithConfig(context.Background(), conf)
+	return pgxpool.NewWithConfig(context.Background(), conf)
 }

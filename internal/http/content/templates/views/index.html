@@ -93,15 +93,33 @@
             console.log("WebSocket is open now.");
         };
 
-        ws.onmessage = function (event) {
+        let allowed_to_update = true;
 
+        function limit(fn, x) {
+            if (allowed_to_update) {
+                allowed_to_update = false;
+                let i = setInterval(() => {
+                    clearInterval(i)
+                    allowed_to_update = true;
+                }, x);
+                fn()
+            }
+        }
+
+        ws.onmessage = function (event) {
             let event_data = JSON.parse(event.data)
 
             if (event_data.Category == "CreateAuthenticationChallenge"){
                 console.log("Got an auth challenge message")
 
                 log_data.requested += 1
-                update(log_data)
+
+                // TODO: We should probably rate limit this, or find a way to bulk send the data to the front end
+                // if we have tens of thousands of logs this would probably be an issue
+                // limit(() => {
+                    console.log(`Updating at ${new Date()}`)
+                    update(log_data)
+                // }, 100)
             }
 
             // console.log(event)
