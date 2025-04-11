@@ -4,7 +4,9 @@ import (
 	"context"
 	"covet.digital/dashboard/internal/config"
 	"covet.digital/dashboard/internal/datasources/drivers"
+	"covet.digital/dashboard/internal/http/content"
 	"covet.digital/dashboard/internal/http/routes"
+	"covet.digital/dashboard/pkg/template"
 	"errors"
 	"fmt"
 	"log"
@@ -39,6 +41,9 @@ func NewApp() (*App, error) {
 		return nil, err
 	}
 
+	templateService := template.NewTemplateService(content.TemplateFs, "**/**/*.html")
+
+	routes.AddHomeRoute(mux, templateService).Setup()
 	routes.AddWSRoute(mux, connPool, conf).Setup()
 
 	server := &http.Server{
