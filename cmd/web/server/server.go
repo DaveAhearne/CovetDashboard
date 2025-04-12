@@ -43,7 +43,7 @@ func NewApp() (*App, error) {
 
 	templateService := template.NewTemplateService(content.TemplateFs, "**/**/*.html")
 
-	routes.AddHomeRoute(mux, templateService).Setup()
+	routes.AddHomeRoute(mux, templateService, conf).Setup()
 	routes.AddWSRoute(mux, dbConn, conf).Setup()
 
 	server := &http.Server{

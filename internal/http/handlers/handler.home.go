@@ -14,7 +14,6 @@ type HomeHandler struct {
 }
 
 func NewHomeHandler(usecase domains.HomeUsecase, templateService template.TemplateService) HomeHandler {
-
 	return HomeHandler{
 		usecase:         usecase,
 		templateService: templateService,
@@ -22,8 +21,6 @@ func NewHomeHandler(usecase domains.HomeUsecase, templateService template.Templa
 }
 
 func (homeH HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
-	println("User got the home page")
-	
 	req := requests.HomepageRequest{}
 
 	status, res := homeH.usecase.Home(r.Context(), *req.ToDomain())
@@ -31,7 +28,10 @@ func (homeH HomeHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(status)
 
-	homeH.templateService.Execute(w, "views/index", homepageResponse)
+	err := homeH.templateService.Execute(w, "views/index", homepageResponse)
+	if err != nil {
+		println("Error executing the template", err)
+	}
 }
 
 func (homeH HomeHandler) RedirectHome(w http.ResponseWriter, r *http.Request) {

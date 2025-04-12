@@ -2,6 +2,7 @@ package routes
 
 import (
 	"covet.digital/dashboard/internal/business/usecases"
+	"covet.digital/dashboard/internal/config"
 	"covet.digital/dashboard/internal/http/handlers"
 	"covet.digital/dashboard/pkg/template"
 	"net/http"
@@ -13,8 +14,8 @@ type homeRoutes struct {
 	mux        *http.ServeMux
 }
 
-func AddHomeRoute(mux *http.ServeMux, templateService template.TemplateService) *homeRoutes {
-	homeUsecase := usecases.NewHomeUsecase()
+func AddHomeRoute(mux *http.ServeMux, templateService template.TemplateService, conf config.Config) *homeRoutes {
+	homeUsecase := usecases.NewHomeUsecase(conf)
 	homeHandler := handlers.NewHomeHandler(homeUsecase, templateService)
 
 	middleware := func(h http.HandlerFunc) http.Handler {

@@ -5,6 +5,8 @@ import (
 )
 
 type HomeDomain struct {
+	ApplicationHost string
+	ApplicationPort string
 }
 
 type HomeUsecase interface {

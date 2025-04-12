@@ -33,7 +33,7 @@
             .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
         // create 2 data_set
-        var log_data = {requested: 1, used: 1}
+        var log_data = {requested: 0, used: 0}
 
         // set the color scale
         var color = d3.scaleOrdinal()
@@ -46,7 +46,7 @@
             // Compute the position of each group on the pie:
             var pie = d3.pie()
                 .value(function(d) {return d.value; })
-                .sort(function(a, b) { console.log(a) ; return d3.ascending(a.key, b.key);} ) // This make sure that group order remains the same in the pie chart
+                .sort(function(a, b) { return d3.ascending(a.key, b.key);} ) // This make sure that group order remains the same in the pie chart
             var data_ready = pie(d3.entries(data))
 
             // map to data
@@ -86,7 +86,7 @@
 
         // ### END CHART ###
 
-        var ws = new WebSocket("ws://192.168.0.76:1234/ws");
+        var ws = new WebSocket("ws://{{.Host}}:{{.Port}}/ws");
 
         ws.onopen = function (event) {
             var errors = document.getElementById('errors');
@@ -110,19 +110,12 @@
             let event_data = JSON.parse(event.data)
 
             if (event_data.Category == "CreateAuthenticationChallenge"){
-                console.log("Got an auth challenge message")
-
                 log_data.requested += 1
 
                 // TODO: We should probably rate limit this, or find a way to bulk send the data to the front end
                 // if we have tens of thousands of logs this would probably be an issue
-                // limit(() => {
-                    console.log(`Updating at ${new Date()}`)
-                    update(log_data)
-                // }, 100)
+                update(log_data)
             }
-
-            // console.log(event)
 
             // var messages = document.getElementById('messages');
             // var message = document.createElement('div');
